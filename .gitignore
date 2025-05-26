@@ -3,6 +3,6 @@ DerivedDataCache/
 Intermediate/
 Saved/
 Build/
-Content/Sotu/Blueprints/Old/
+Content\Sotu\Blueprints\Old
 *.user
 .idea/
