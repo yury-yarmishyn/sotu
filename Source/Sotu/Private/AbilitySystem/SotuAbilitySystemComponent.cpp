@@ -1,11 +1,11 @@
 #include "AbilitySystem/SotuAbilitySystemComponent.h"
+#include "Abilities/GameplayAbility.h"
 #include "GameplayAbilitySpec.h"
 #include "GameplayEffectTypes.h"
+#include "AttributeSet.h"
 
 USotuAbilitySystemComponent::USotuAbilitySystemComponent()
 {
-	AttributeSet = CreateDefaultSubobject<USotuAttributeSet>(TEXT("AttributeSet"));
-	AddAttributeSetSubobject(AttributeSet.Get());
 }
 
 void USotuAbilitySystemComponent::BeginPlay()
@@ -13,7 +13,8 @@ void USotuAbilitySystemComponent::BeginPlay()
 	Super::BeginPlay();
 
 	InitializeAbilitySystem(GetOwner(), GetOwner());
-	InitializeAttributes(AttributeSet.Get(), AttributeData.Get());
+	InitializeAttributeSets(AttributeSetClasses);
+	InitializeAttributes(AttributeData.Get());
 	InitializeGameplayAbilities(DefaultAbilities);
 }
 
@@ -23,15 +24,27 @@ void USotuAbilitySystemComponent::InitializeAbilitySystem(AActor* InOwnerActor, 
 	InitAbilityActorInfo(InOwnerActor, InAvatarActor);
 }
 
-void USotuAbilitySystemComponent::InitializeAttributes(USotuAttributeSet* InAttributeSet, USotuAttributeData* InAttributeData)
+void USotuAbilitySystemComponent::InitializeAttributeSets(const TArray<TSubclassOf<UAttributeSet>>& InAttributeSetClasses)
 {
-	if (!InAttributeSet || !InAttributeData) return;
+	for (TSubclassOf<UAttributeSet> SetClass : InAttributeSetClasses)
+	{
+		if (!SetClass) continue;
+		UAttributeSet* SetInstance = NewObject<UAttributeSet>(GetOwner(), SetClass);
+		if (!SetInstance) continue;
+		AddAttributeSetSubobject(SetInstance);
+	}
+}
+
+void USotuAbilitySystemComponent::InitializeAttributes(USotuAttributeData* InAttributeData)
+{
+	if (!InAttributeData) return;
 
 	for (const TPair<FGameplayAttribute, float>& Pair : InAttributeData->Attributes)
 	{
 		if (Pair.Key.IsValid())
 		{
-			GetGameplayAttributeValueChangeDelegate(Pair.Key).AddUObject(this, &USotuAbilitySystemComponent::HandleAttributeChanged);
+			GetGameplayAttributeValueChangeDelegate(Pair.Key)
+				.AddUObject(this, &USotuAbilitySystemComponent::HandleAttributeChanged);
 		}
 	}
 

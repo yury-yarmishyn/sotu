@@ -3,10 +3,11 @@
 #include "CoreMinimal.h"
 #include "AbilitySystemComponent.h"
 #include "SotuAttributeData.h"
-#include "SotuAttributeSet.h"
 #include "SotuAbilitySystemComponent.generated.h"
 
 struct FOnAttributeChangeData;
+class UGameplayAbility;
+class UAttributeSet;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnAttributeChangedSignature, FGameplayAttribute, Attribute, float, OldValue, float, NewValue);
 
@@ -27,16 +28,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Abilities")
 	TArray<TSubclassOf<UGameplayAbility>> DefaultAbilities;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Attributes")
-	TObjectPtr<USotuAttributeSet> AttributeSet = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Attributes")
+	TArray<TSubclassOf<UAttributeSet>> AttributeSetClasses;
 
 protected:
 	virtual void BeginPlay() override;
 
 	void HandleAttributeChanged(const FOnAttributeChangeData& Data);
-	void InitializeAttributes(USotuAttributeSet* InAttributeSet, USotuAttributeData* InAttributeData);
-	void InitializeGameplayAbilities(const TArray<TSubclassOf<UGameplayAbility>>& InDefaultAbilities);
-
-private:
 	void InitializeAbilitySystem(AActor* InOwnerActor, AActor* InAvatarActor);
+	void InitializeAttributeSets(const TArray<TSubclassOf<UAttributeSet>>& InAttributeSetClasses);
+	void InitializeAttributes(USotuAttributeData* InAttributeData);
+	void InitializeGameplayAbilities(const TArray<TSubclassOf<UGameplayAbility>>& InDefaultAbilities);
 };
