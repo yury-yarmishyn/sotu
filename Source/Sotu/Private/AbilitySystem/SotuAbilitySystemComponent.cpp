@@ -1,41 +1,62 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-
 #include "AbilitySystem/SotuAbilitySystemComponent.h"
-
+#include "GameplayAbilitySpec.h"
+#include "GameplayEffectTypes.h"
 
 USotuAbilitySystemComponent::USotuAbilitySystemComponent()
 {
-	
+	AttributeSet = CreateDefaultSubobject<USotuAttributeSet>(TEXT("AttributeSet"));
+	AddAttributeSetSubobject(AttributeSet.Get());
 }
 
 void USotuAbilitySystemComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InitializeAbilitySystemComponent();
-	InitializeAttributes();
+	InitializeAbilitySystem(GetOwner(), GetOwner());
+	InitializeAttributes(AttributeSet.Get(), AttributeData.Get());
+	InitializeGameplayAbilities(DefaultAbilities);
 }
 
-void USotuAbilitySystemComponent::InitializeAttributes()
+void USotuAbilitySystemComponent::InitializeAbilitySystem(AActor* InOwnerActor, AActor* InAvatarActor)
 {
-	if (!AttributeData) return;
-	
-	USotuAttributeSet* AttributeSet = NewObject<USotuAttributeSet>(GetOwner());
-	AddAttributeSetSubobject(AttributeSet);
+	if (!InOwnerActor || !InAvatarActor) return;
+	InitAbilityActorInfo(InOwnerActor, InAvatarActor);
+}
 
-	for (const TPair<FGameplayAttribute, float>& Attribute : AttributeData->Attributes)
+void USotuAbilitySystemComponent::InitializeAttributes(USotuAttributeSet* InAttributeSet, USotuAttributeData* InAttributeData)
+{
+	if (!InAttributeSet || !InAttributeData) return;
+
+	for (const TPair<FGameplayAttribute, float>& Pair : InAttributeData->Attributes)
 	{
-		if (Attribute.Key.IsValid())
+		if (Pair.Key.IsValid())
 		{
-			SetNumericAttributeBase(Attribute.Key, Attribute.Value);
+			GetGameplayAttributeValueChangeDelegate(Pair.Key).AddUObject(this, &USotuAbilitySystemComponent::HandleAttributeChanged);
+		}
+	}
+
+	for (const TPair<FGameplayAttribute, float>& Pair : InAttributeData->Attributes)
+	{
+		if (Pair.Key.IsValid())
+		{
+			SetNumericAttributeBase(Pair.Key, Pair.Value);
 		}
 	}
 }
 
-void USotuAbilitySystemComponent::InitializeAbilitySystemComponent()
+void USotuAbilitySystemComponent::InitializeGameplayAbilities(const TArray<TSubclassOf<UGameplayAbility>>& InDefaultAbilities)
 {
-	if (!GetOwner()) return;
-	
-	InitAbilityActorInfo(GetOwner(), GetOwner());
+	for (TSubclassOf<UGameplayAbility> AbilityClass : InDefaultAbilities)
+	{
+		if (!AbilityClass) continue;
+		if (FindAbilitySpecFromClass(AbilityClass) != nullptr) continue;
+
+		FGameplayAbilitySpec Spec(AbilityClass, 1, INDEX_NONE, this);
+		GiveAbility(Spec);
+	}
+}
+
+void USotuAbilitySystemComponent::HandleAttributeChanged(const FOnAttributeChangeData& Data)
+{
+	OnAttributeChanged.Broadcast(Data.Attribute, Data.OldValue, Data.NewValue);
 }

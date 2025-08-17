@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -7,13 +5,12 @@
 #include "SotuAttributeData.h"
 #include "SotuAttributeSet.h"
 #include "SotuAbilitySystemComponent.generated.h"
-/**
- * 
- */
+
+struct FOnAttributeChangeData;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnAttributeChangedSignature, FGameplayAttribute, Attribute, float, OldValue, float, NewValue);
 
-UCLASS(Blueprintable, BlueprintType)
+UCLASS(Blueprintable, BlueprintType, ClassGroup=(Abilities), meta=(BlueprintSpawnableComponent))
 class SOTU_API USotuAbilitySystemComponent : public UAbilitySystemComponent
 {
 	GENERATED_BODY()
@@ -21,14 +18,25 @@ class SOTU_API USotuAbilitySystemComponent : public UAbilitySystemComponent
 public:
 	USotuAbilitySystemComponent();
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attributes")
-	TObjectPtr<USotuAttributeData> AttributeData;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Attributes")
+	TObjectPtr<USotuAttributeData> AttributeData = nullptr;
 
-	UPROPERTY(BlueprintAssignable, Category = "Attributes")
+	UPROPERTY(BlueprintAssignable, Category="Attributes")
 	FOnAttributeChangedSignature OnAttributeChanged;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Abilities")
+	TArray<TSubclassOf<UGameplayAbility>> DefaultAbilities;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Attributes")
+	TObjectPtr<USotuAttributeSet> AttributeSet = nullptr;
 
 protected:
 	virtual void BeginPlay() override;
-	void InitializeAttributes();
-	void InitializeAbilitySystemComponent();
+
+	void HandleAttributeChanged(const FOnAttributeChangeData& Data);
+	void InitializeAttributes(USotuAttributeSet* InAttributeSet, USotuAttributeData* InAttributeData);
+	void InitializeGameplayAbilities(const TArray<TSubclassOf<UGameplayAbility>>& InDefaultAbilities);
+
+private:
+	void InitializeAbilitySystem(AActor* InOwnerActor, AActor* InAvatarActor);
 };
