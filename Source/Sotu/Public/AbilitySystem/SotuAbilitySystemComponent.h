@@ -31,6 +31,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Attributes")
 	TArray<TSubclassOf<UAttributeSet>> AttributeSetClasses;
 
+	UFUNCTION(BlueprintCallable, Category="GAS|Cancel")
+	void CancelAbilitiesWithTags(const FGameplayTagContainer& WithTags, const FGameplayTagContainer& WithoutTags);
+
 protected:
 	virtual void BeginPlay() override;
 

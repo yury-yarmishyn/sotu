@@ -38,15 +38,11 @@ public:
 	FGameplayAttributeData MaxHealth;
 	ATTRIBUTE_ACCESSORS(USotuAttributeSet, MaxHealth);
 
-	// Level Attributes
+	UPROPERTY(BlueprintReadOnly, Category = "Vital Attributes")
+	FGameplayAttributeData Stamina;
+	ATTRIBUTE_ACCESSORS(USotuAttributeSet, Stamina);
 
-	UPROPERTY(BlueprintReadOnly, Category = "Level")
-	FGameplayAttributeData Level;
-	ATTRIBUTE_ACCESSORS(USotuAttributeSet, Level);
-
-	// Primary Attributes
-
-	UPROPERTY(BlueprintReadOnly, Category = "Primary Attributes")
-	FGameplayAttributeData Damage;
-	ATTRIBUTE_ACCESSORS(USotuAttributeSet, Damage);
+	UPROPERTY(BlueprintReadOnly, Category = "Vital Attributes")
+	FGameplayAttributeData MaxStamina;
+	ATTRIBUTE_ACCESSORS(USotuAttributeSet, MaxStamina);
 };

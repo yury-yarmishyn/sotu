@@ -8,10 +8,27 @@ USotuAbilitySystemComponent::USotuAbilitySystemComponent()
 {
 }
 
+void USotuAbilitySystemComponent::CancelAbilitiesWithTags(const FGameplayTagContainer& WithTags, const FGameplayTagContainer& WithoutTags)
+{
+	FGameplayTagContainer WithTagsCopy = WithTags;
+	FGameplayTagContainer WithoutTagsCopy = WithoutTags;
+
+	if (WithTagsCopy.IsEmpty() && WithoutTagsCopy.IsEmpty())
+	{
+		return;
+	}
+
+	CancelAbilities(
+		WithTagsCopy.IsEmpty() ? nullptr : &WithTagsCopy,
+		WithoutTagsCopy.IsEmpty() ? nullptr : &WithoutTagsCopy,
+		nullptr
+	);
+}
+
 void USotuAbilitySystemComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	InitializeAbilitySystem(GetOwner(), GetOwner());
 	InitializeAttributeSets(AttributeSetClasses);
 	InitializeAttributes(AttributeData.Get());
@@ -59,12 +76,13 @@ void USotuAbilitySystemComponent::InitializeAttributes(USotuAttributeData* InAtt
 
 void USotuAbilitySystemComponent::InitializeGameplayAbilities(const TArray<TSubclassOf<UGameplayAbility>>& InDefaultAbilities)
 {
-	for (TSubclassOf<UGameplayAbility> AbilityClass : InDefaultAbilities)
+	for (int32 Index = 0; Index < InDefaultAbilities.Num(); ++Index)
 	{
+		TSubclassOf<UGameplayAbility> AbilityClass = InDefaultAbilities[Index];
 		if (!AbilityClass) continue;
 		if (FindAbilitySpecFromClass(AbilityClass) != nullptr) continue;
 
-		FGameplayAbilitySpec Spec(AbilityClass, 1, INDEX_NONE, this);
+		FGameplayAbilitySpec Spec(AbilityClass, 1, Index, this);
 		GiveAbility(Spec);
 	}
 }
