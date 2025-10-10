@@ -25,6 +25,18 @@ void USotuAbilitySystemComponent::CancelAbilitiesWithTags(const FGameplayTagCont
 	);
 }
 
+void USotuAbilitySystemComponent::ClearAbilityWithClass(TSubclassOf<UGameplayAbility> AbilityClass)
+{
+	for (int32 Index = 0; Index < DefaultAbilities.Num(); ++Index)
+	{
+		if (!AbilityClass) continue;
+		if (FindAbilitySpecFromClass(AbilityClass) != nullptr) continue;
+
+		FGameplayAbilitySpec Spec(AbilityClass);
+		ClearAbility(Spec.Handle);
+	}
+}
+
 void USotuAbilitySystemComponent::BeginPlay()
 {
 	Super::BeginPlay();

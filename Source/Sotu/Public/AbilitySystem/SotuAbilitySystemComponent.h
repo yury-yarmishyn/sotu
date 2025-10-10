@@ -34,6 +34,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category="GAS|Cancel")
 	void CancelAbilitiesWithTags(const FGameplayTagContainer& WithTags, const FGameplayTagContainer& WithoutTags);
 
+	UFUNCTION(BlueprintCallable, Category="GAS|Cancel")
+	void ClearAbilityWithClass(TSubclassOf<UGameplayAbility> AbilityClass);
+
 protected:
 	virtual void BeginPlay() override;
 
