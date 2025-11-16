@@ -13,6 +13,15 @@ USotuAttributeSet::USotuAttributeSet()
 void USotuAttributeSet::PreAttributeChange(const FGameplayAttribute& Attribute, float& NewValue)
 {
 	Super::PreAttributeChange(Attribute, NewValue);
+
+	if (Attribute == GetHealthAttribute() || Attribute == GetRallyAttribute())
+	{
+		NewValue = FMath::Clamp(NewValue, 0.0f, MaxHealth.GetCurrentValue());
+	}
+	else if (Attribute == GetStaminaAttribute())
+	{
+		NewValue = FMath::Clamp(NewValue, 0.0f, MaxStamina.GetCurrentValue());
+	}
 }
 
 void USotuAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallbackData& Data)
@@ -20,12 +29,13 @@ void USotuAttributeSet::PostGameplayEffectExecute(const FGameplayEffectModCallba
 	Super::PostGameplayEffectExecute(Data);
 
 	const FGameplayAttribute& Attribute = Data.EvaluatedData.Attribute;
-	float OldValue = Data.EvaluatedData.Magnitude;
-	float NewValue = Attribute.GetNumericValue(this);
+	const float OldValue = Data.EvaluatedData.Magnitude;
+	const float NewValue = Attribute.GetNumericValue(this);
 
-	if (USotuAbilitySystemComponent* SotuASC = Cast<USotuAbilitySystemComponent>(GetOwningAbilitySystemComponent()))
+	if (const USotuAbilitySystemComponent* SotuASC = Cast<USotuAbilitySystemComponent>(GetOwningAbilitySystemComponent()))
 	{
 		SotuASC->OnAttributeChanged.Broadcast(Attribute, OldValue, NewValue);
 	}
 }
+
 

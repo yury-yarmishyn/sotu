@@ -45,4 +45,11 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category = "Vital Attributes")
 	FGameplayAttributeData MaxStamina;
 	ATTRIBUTE_ACCESSORS(USotuAttributeSet, MaxStamina);
+
+	// Derived Attributes
+
+	UPROPERTY(BlueprintReadOnly, Category = "Vital Attributes")
+	FGameplayAttributeData Rally;
+	ATTRIBUTE_ACCESSORS(USotuAttributeSet, Rally);
 };
+

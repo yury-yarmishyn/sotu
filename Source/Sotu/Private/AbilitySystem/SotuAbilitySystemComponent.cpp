@@ -1,105 +1,66 @@
 #include "AbilitySystem/SotuAbilitySystemComponent.h"
-#include "Abilities/GameplayAbility.h"
-#include "GameplayAbilitySpec.h"
-#include "GameplayEffectTypes.h"
-#include "AttributeSet.h"
+#include "GameplayTagsManager.h"
+#include "AbilitySystem/SotuAttributeSet.h"
 
 USotuAbilitySystemComponent::USotuAbilitySystemComponent()
 {
 }
 
-void USotuAbilitySystemComponent::CancelAbilitiesWithTags(const FGameplayTagContainer& WithTags, const FGameplayTagContainer& WithoutTags)
+FGameplayTagContainer USotuAbilitySystemComponent::GetChildrenGameplayTags(const FGameplayTag ParentTag,
+	bool bIncludeAllDescendants) const
 {
-	FGameplayTagContainer WithTagsCopy = WithTags;
-	FGameplayTagContainer WithoutTagsCopy = WithoutTags;
+	FGameplayTagContainer Result;
 
-	if (WithTagsCopy.IsEmpty() && WithoutTagsCopy.IsEmpty())
+	if (!ParentTag.IsValid())
 	{
-		return;
+		return Result;
 	}
 
-	CancelAbilities(
-		WithTagsCopy.IsEmpty() ? nullptr : &WithTagsCopy,
-		WithoutTagsCopy.IsEmpty() ? nullptr : &WithoutTagsCopy,
-		nullptr
-	);
-}
+	const UGameplayTagsManager& Manager = UGameplayTagsManager::Get();
 
-void USotuAbilitySystemComponent::ClearAbilityWithClass(TSubclassOf<UGameplayAbility> AbilityClass)
-{
-	for (int32 Index = 0; Index < DefaultAbilities.Num(); ++Index)
+	if (bIncludeAllDescendants)
 	{
-		if (!AbilityClass) continue;
-		if (FindAbilitySpecFromClass(AbilityClass) != nullptr) continue;
-
-		FGameplayAbilitySpec Spec(AbilityClass);
-		ClearAbility(Spec.Handle);
+		Result = Manager.RequestGameplayTagChildren(ParentTag);
+		return Result;
 	}
+	
+	const TSharedPtr<FGameplayTagNode> Node = Manager.FindTagNode(ParentTag);
+	if (!Node.IsValid())
+	{
+		return Result;
+	}
+
+	const TArray<TSharedPtr<FGameplayTagNode>>& Children = Node->GetChildTagNodes();
+	for (const TSharedPtr<FGameplayTagNode>& ChildNode : Children)
+	{
+		if (ChildNode.IsValid())
+		{
+			Result.AddTag(ChildNode->GetCompleteTag());
+		}
+	}
+
+	return Result;
 }
 
 void USotuAbilitySystemComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	InitializeAbilitySystem(GetOwner(), GetOwner());
-	InitializeAttributeSets(AttributeSetClasses);
-	InitializeAttributes(AttributeData.Get());
-	InitializeGameplayAbilities(DefaultAbilities);
 }
 
-void USotuAbilitySystemComponent::InitializeAbilitySystem(AActor* InOwnerActor, AActor* InAvatarActor)
+void USotuAbilitySystemComponent::InitializeAbilitySystem()
 {
-	if (!InOwnerActor || !InAvatarActor) return;
-	InitAbilityActorInfo(InOwnerActor, InAvatarActor);
+	if (!GetOwner()) return;
+	InitAbilityActorInfo(GetOwner(), GetOwner());
 }
 
-void USotuAbilitySystemComponent::InitializeAttributeSets(const TArray<TSubclassOf<UAttributeSet>>& InAttributeSetClasses)
+void USotuAbilitySystemComponent::InitializeAttributeSet()
 {
-	for (TSubclassOf<UAttributeSet> SetClass : InAttributeSetClasses)
-	{
-		if (!SetClass) continue;
-		UAttributeSet* SetInstance = NewObject<UAttributeSet>(GetOwner(), SetClass);
-		if (!SetInstance) continue;
-		AddAttributeSetSubobject(SetInstance);
-	}
+	USotuAttributeSet* AttributeSet = NewObject<USotuAttributeSet>(GetOwner());
+	if (!AttributeSet) return;
+	AddAttributeSetSubobject(AttributeSet);
 }
 
-void USotuAbilitySystemComponent::InitializeAttributes(USotuAttributeData* InAttributeData)
-{
-	if (!InAttributeData) return;
-
-	for (const TPair<FGameplayAttribute, float>& Pair : InAttributeData->Attributes)
-	{
-		if (Pair.Key.IsValid())
-		{
-			GetGameplayAttributeValueChangeDelegate(Pair.Key)
-				.AddUObject(this, &USotuAbilitySystemComponent::HandleAttributeChanged);
-		}
-	}
-
-	for (const TPair<FGameplayAttribute, float>& Pair : InAttributeData->Attributes)
-	{
-		if (Pair.Key.IsValid())
-		{
-			SetNumericAttributeBase(Pair.Key, Pair.Value);
-		}
-	}
-}
-
-void USotuAbilitySystemComponent::InitializeGameplayAbilities(const TArray<TSubclassOf<UGameplayAbility>>& InDefaultAbilities)
-{
-	for (int32 Index = 0; Index < InDefaultAbilities.Num(); ++Index)
-	{
-		TSubclassOf<UGameplayAbility> AbilityClass = InDefaultAbilities[Index];
-		if (!AbilityClass) continue;
-		if (FindAbilitySpecFromClass(AbilityClass) != nullptr) continue;
-
-		FGameplayAbilitySpec Spec(AbilityClass, 1, Index, this);
-		GiveAbility(Spec);
-	}
-}
-
-void USotuAbilitySystemComponent::HandleAttributeChanged(const FOnAttributeChangeData& Data)
+void USotuAbilitySystemComponent::HandleAttributeChanged(const FOnAttributeChangeData& Data) const
 {
 	OnAttributeChanged.Broadcast(Data.Attribute, Data.OldValue, Data.NewValue);
 }
